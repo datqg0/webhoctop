@@ -1,0 +1,11 @@
+# Keep local credentials and environment files out of Git.
+.env*
+**/.env*
+
+# Local databases, Python caches, and generated frontend files.
+backend/*.db
+backend/*.db-*
+**/__pycache__/
+**/*.py[cod]
+frontend/node_modules/
+frontend/dist/
