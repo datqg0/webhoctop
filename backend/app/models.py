@@ -70,14 +70,29 @@ class ExamSubmission(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     exam_id = Column(String(36), ForeignKey("exams.id"), nullable=False)
+    user_id = Column(String(36), nullable=True, index=True)
     user_name = Column(String(100), default="Thí sinh tự do")
     selected_answers = Column(JSON, nullable=False) # {"1": "A", "2": "C", ...}
     score = Column(Float, nullable=False) # Thang điểm 10.0
     total_correct = Column(Integer, nullable=False)
+    total_questions = Column(Integer, nullable=False, default=0)
     completed_seconds = Column(Integer, default=0)
     submitted_at = Column(DateTime, default=datetime.utcnow)
 
     exam = relationship("Exam", back_populates="submissions")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    google_sub = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(255), nullable=False, index=True)
+    full_name = Column(String(100), nullable=False, default="")
+    school = Column(String(200), nullable=False, default="")
+    grade = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 class KnowledgeDocument(Base):
     __tablename__ = "knowledge_documents"

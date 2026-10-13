@@ -8,6 +8,7 @@ export default function QuestionPalette({
   currentOrder,
   onSelectOrder,
   onSubmitExam,
+  submitDisabled = false,
   practiceMode = false,
   showSubmit = true,
   submitLabel = 'Nộp Bài Thi Ngay',
@@ -83,7 +84,8 @@ export default function QuestionPalette({
       {showSubmit && <div className="pt-4 mt-4 border-t border-slate-100">
         <button
           onClick={onSubmitExam}
-          className="w-full bg-gradient-to-r from-moon-600 to-moon-700 hover:from-moon-700 hover:to-moon-800 text-white font-bold py-2.5 px-4 rounded-xl shadow-md shadow-moon-600/20 flex items-center justify-center gap-2 text-sm transition-all"
+          disabled={submitDisabled}
+          className="w-full bg-gradient-to-r from-moon-600 to-moon-700 hover:from-moon-700 hover:to-moon-800 text-white font-bold py-2.5 px-4 rounded-xl shadow-md shadow-moon-600/20 flex items-center justify-center gap-2 text-sm transition-all disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send className="w-4 h-4" />
           {submitLabel}

@@ -5,9 +5,10 @@ import HomePage from './pages/HomePage';
 const ExamRoomPage = lazy(() => import('./pages/ExamRoomPage'));
 const ExamSearchPage = lazy(() => import('./pages/ExamSearchPage'));
 const AdminKnowledgePage = lazy(() => import('./pages/AdminKnowledgePage'));
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('home'); // 'home' | 'practice' | 'search' | 'knowledge'
+  const [currentView, setCurrentView] = useState('home');
   const [activeSubject, setActiveSubject] = useState('');
   const [activeExamId, setActiveExamId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,6 +71,10 @@ export default function App() {
 
           {currentView === 'knowledge' && (
             <AdminKnowledgePage />
+          )}
+
+          {currentView === 'profile' && (
+            <UserProfilePage onStartPractice={handleStartPractice} />
           )}
         </Suspense>
       </main>

@@ -9,6 +9,10 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Gemini's current stable embedding model replaces the unavailable legacy name.
+LEGACY_EMBEDDING_MODELS = {"text-embedding-001", "embedding-001"}
+EMBEDDING_DIMENSIONS = 768
+
 
 class GeminiService:
     def __init__(self):
@@ -31,18 +35,25 @@ class GeminiService:
         if not self.is_configured:
             return []
 
+        configured_model = settings.EMBEDDING_MODEL.strip().removeprefix("models/")
+        model_name = configured_model
+        if configured_model.lower() in LEGACY_EMBEDDING_MODELS:
+            model_name = "gemini-embedding-001"
+
         try:
-            model_name = settings.EMBEDDING_MODEL.removeprefix("models/")
             result = self.client.models.embed_content(
                 model=model_name,
                 contents=text,
-                config=types.EmbedContentConfig(task_type=task_type.upper()),
+                config=types.EmbedContentConfig(
+                    task_type=task_type.upper(),
+                    output_dimensionality=EMBEDDING_DIMENSIONS,
+                ),
             )
             if not result.embeddings:
                 return []
             return list(result.embeddings[0].values or [])
         except Exception as e:
-            logger.error("Error calling Gemini embedding model %s: %s", settings.EMBEDDING_MODEL, e)
+            logger.error("Error calling Gemini embedding model %s: %s", model_name, e)
             return []
 
     def generate_explanation(self, system_instruction: str, user_prompt: str) -> str:

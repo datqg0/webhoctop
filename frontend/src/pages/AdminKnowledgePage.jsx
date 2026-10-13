@@ -24,6 +24,77 @@ export default function AdminKnowledgePage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [googleLoggingIn, setGoogleLoggingIn] = useState(false);
+  const [googleError, setGoogleError] = useState('');
+  const googleButtonRef = useRef(null);
+  const googleCredentialHandler = useRef(null);
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  const handleGoogleCredential = async (credential) => {
+    if (!credential) {
+      setMessage('Google không trả về thông tin đăng nhập. Vui lòng thử lại.');
+      return;
+    }
+
+    setGoogleLoggingIn(true);
+    setMessage('');
+    try {
+      await api.loginAdminWithGoogle(credential);
+      setAdminToken(sessionStorage.getItem('moon_admin_token'));
+    } catch (err) {
+      setMessage(err.response?.data?.detail || 'Không thể đăng nhập bằng Google. Vui lòng thử lại.');
+    } finally {
+      setGoogleLoggingIn(false);
+    }
+  };
+  googleCredentialHandler.current = handleGoogleCredential;
+
+  useEffect(() => {
+    if (!googleClientId) {
+      setGoogleError('Chưa cấu hình VITE_GOOGLE_CLIENT_ID cho frontend.');
+      return undefined;
+    }
+
+    let cancelled = false;
+    const renderGoogleButton = () => {
+      if (cancelled || !window.google?.accounts?.id || !googleButtonRef.current) return;
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: (response) => googleCredentialHandler.current?.(response.credential),
+        auto_select: false,
+      });
+      googleButtonRef.current.replaceChildren();
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        width: Math.min(360, googleButtonRef.current.parentElement?.clientWidth || 320),
+      });
+      setGoogleError('');
+    };
+
+    let script = document.getElementById('google-identity-services');
+    if (window.google?.accounts?.id) {
+      renderGoogleButton();
+    } else if (script) {
+      script.addEventListener('load', renderGoogleButton);
+    } else {
+      script = document.createElement('script');
+      script.id = 'google-identity-services';
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = renderGoogleButton;
+      script.onerror = () => setGoogleError('Không tải được dịch vụ đăng nhập Google.');
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+      script?.removeEventListener('load', renderGoogleButton);
+    };
+  }, [googleClientId]);
 
   const loadDocuments = () => {
     if (!adminToken) {
@@ -155,6 +226,20 @@ export default function AdminKnowledgePage() {
           {message && <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{message}</p>}
           <button disabled={loggingIn} className="w-full rounded-lg bg-moon-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-moon-800 disabled:opacity-60">{loggingIn ? 'Đang đăng nhập…' : 'Đăng nhập'}</button>
         </form>
+        <div className="my-5 flex items-center gap-3 text-xs font-medium text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          <span>hoặc</span>
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+        {googleClientId ? (
+          <div className={googleLoggingIn ? 'pointer-events-none flex justify-center opacity-60' : 'flex justify-center'}>
+            <div ref={googleButtonRef} />
+          </div>
+        ) : (
+          <p className="text-center text-xs text-slate-500">Đăng nhập Google chưa được cấu hình.</p>
+        )}
+        {googleLoggingIn && <p role="status" className="mt-2 text-center text-xs text-slate-500">Đang xác thực Google…</p>}
+        {googleError && googleClientId && <p role="status" className="mt-2 text-center text-xs text-rose-600">{googleError}</p>}
       </section>
     );
   }

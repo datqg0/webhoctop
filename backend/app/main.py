@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base, SessionLocal
 from sqlalchemy import inspect
-from app.models import Question
-from app.api import exams, questions, explain, knowledge, auth
+from app.models import Question, ExamSubmission, User
+from app.api import exams, questions, explain, knowledge, auth, users
 from seed_data import seed_initial_data, seed_filter_demo_questions
 from full_exam_seed import seed_full_practice_catalog
 
@@ -55,11 +55,29 @@ def ensure_question_filter_columns():
     finally:
         db.close()
 
+
+def ensure_submission_user_column():
+    columns = {column["name"] for column in inspect(engine).get_columns("exam_submissions")}
+    migrations = {
+        "user_id": "VARCHAR(36)",
+        "total_questions": "INTEGER NOT NULL DEFAULT 0",
+    }
+    for name, sql_type in migrations.items():
+        if name not in columns:
+            with engine.begin() as connection:
+                connection.exec_driver_sql(f"ALTER TABLE exam_submissions ADD COLUMN {name} {sql_type}")
+
+    indexes = {index["name"] for index in inspect(engine).get_indexes("exam_submissions")}
+    if "ix_exam_submissions_user_id" not in indexes:
+        with engine.begin() as connection:
+            connection.exec_driver_sql("CREATE INDEX ix_exam_submissions_user_id ON exam_submissions (user_id)")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Apply additive schema changes and idempotent seed data before serving requests.
     Base.metadata.create_all(bind=engine)
     ensure_question_filter_columns()
+    ensure_submission_user_column()
     db = SessionLocal()
     try:
         seed_initial_data(db)
@@ -91,6 +109,7 @@ app.include_router(questions.router, prefix=settings.API_V1_STR)
 app.include_router(explain.router, prefix=settings.API_V1_STR)
 app.include_router(knowledge.router, prefix=settings.API_V1_STR)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(users.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():

@@ -2,8 +2,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from app.auth import get_optional_current_user
 from app.database import get_db
-from app.models import Exam, ExamQuestion, Question, Subject, ExamSubmission
+from app.models import Exam, ExamQuestion, Question, Subject, ExamSubmission, User
 from app.schemas import (
     ExamSummary, ExamDetail, QuestionInExam,
     SubmitExamRequest, SubmissionResult, QuestionEvaluation,
@@ -129,7 +130,12 @@ def get_exam_detail(exam_id: str, db: Session = Depends(get_db)):
     )
 
 @router.post("/exams/{exam_id}/submit", response_model=SubmissionResult)
-def submit_exam(exam_id: str, payload: SubmitExamRequest, db: Session = Depends(get_db)):
+def submit_exam(
+    exam_id: str,
+    payload: SubmitExamRequest,
+    db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_optional_current_user),
+):
     exam = db.query(Exam).filter(Exam.id == exam_id).first()
     if not exam:
         raise HTTPException(status_code=404, detail="Không tìm thấy đề thi")
@@ -176,10 +182,12 @@ def submit_exam(exam_id: str, payload: SubmitExamRequest, db: Session = Depends(
 
     submission = ExamSubmission(
         exam_id=exam_id,
-        user_name=payload.user_name,
+        user_id=user.id if user else None,
+        user_name=user.full_name if user else (payload.user_name or "Thí sinh tự do"),
         selected_answers=payload.selected_answers,
         score=score,
         total_correct=total_correct,
+        total_questions=total_q,
         completed_seconds=payload.completed_seconds
     )
     db.add(submission)

@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
     ADMIN_TOKEN_SECRET: str = os.getenv("ADMIN_TOKEN_SECRET", "")
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    ADMIN_GOOGLE_EMAIL: str = os.getenv("ADMIN_GOOGLE_EMAIL", "")
     
     # CORS
     CORS_ORIGINS: List[str] = [

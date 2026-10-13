@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 import QuestionCard from '../components/QuestionCard';
 import QuestionPalette from '../components/QuestionPalette';
 import PracticeAIChatPopup from '../components/PracticeAIChatPopup';
+import ResultPage from './ResultPage';
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Loader2, MessageCircle } from 'lucide-react';
 
 export default function ExamRoomPage({ examId, onBack }) {
@@ -11,6 +12,10 @@ export default function ExamRoomPage({ examId, onBack }) {
   const [answers, setAnswers] = useState({});
   const [currentOrder, setCurrentOrder] = useState(1);
   const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [submission, setSubmission] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const startedAt = useRef(Date.now());
 
   useEffect(() => {
     setLoading(true);
@@ -18,6 +23,9 @@ export default function ExamRoomPage({ examId, onBack }) {
     setAnswers({});
     setCurrentOrder(1);
     setAiChatOpen(false);
+    setSubmission(null);
+    setSubmitError('');
+    startedAt.current = Date.now();
     api.getExamDetail(examId).then((data) => {
       setExam(data);
       setLoading(false);
@@ -39,6 +47,38 @@ export default function ExamRoomPage({ examId, onBack }) {
   const selectedAnswer = answers[String(currentQuestion.order)] || null;
   const answeredCount = Object.keys(answers).length;
   const selectAnswer = (answer) => setAnswers((current) => ({ ...current, [String(currentQuestion.order)]: answer }));
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const result = await api.submitExam(examId, {
+        user_name: 'Thí sinh tự do',
+        selected_answers: answers,
+        completed_seconds: Math.max(0, Math.round((Date.now() - startedAt.current) / 1000)),
+      });
+      setSubmission(result);
+    } catch (error) {
+      setSubmitError(error.response?.data?.detail || 'Không thể lưu kết quả. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submission) {
+    return (
+      <ResultPage
+        submission={submission}
+        onRetake={() => {
+          setSubmission(null);
+          setAnswers({});
+          setCurrentOrder(1);
+          startedAt.current = Date.now();
+        }}
+        onGoHome={onBack}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20">
@@ -78,6 +118,7 @@ export default function ExamRoomPage({ examId, onBack }) {
         </section>
 
         <aside className="lg:col-span-4">
+          {submitError && <p role="alert" className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{submitError}</p>}
           <QuestionPalette
             totalQuestions={exam.questions.length}
             answers={answers}
@@ -85,7 +126,13 @@ export default function ExamRoomPage({ examId, onBack }) {
             currentOrder={currentOrder}
             onSelectOrder={setCurrentOrder}
             practiceMode
-            showSubmit={false}
+            showSubmit
+            onSubmitExam={handleSubmit}
+            submitDisabled={submitting}
+            submitLabel={submitting ? 'Đang lưu kết quả…' : 'Hoàn thành luyện tập'}
+            submitHint={sessionStorage.getItem('moon_user_token')
+              ? 'Kết quả sẽ được lưu vào lịch sử tài khoản của bạn.'
+              : 'Đăng nhập ở mục Tài khoản trước khi nộp để lưu lịch sử làm bài.'}
           />
         </aside>
       </div>

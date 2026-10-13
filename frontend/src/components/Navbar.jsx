@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Atom, BookOpen, Calculator, Code2, Database, Dna, FlaskConical, Languages, Menu, X } from 'lucide-react';
+import { Atom, BookOpen, Calculator, Code2, Database, Dna, FlaskConical, Languages, Menu, UserRound, X } from 'lucide-react';
 
 const subjects = [
   { code: '', name: 'Tất cả môn', icon: BookOpen },
@@ -34,6 +34,7 @@ export default function Navbar({ activeSubject, onSelectSubject, currentView, on
         <nav className="hidden items-center gap-1 lg:flex">
           {navButton('home', 'Luyện tập')}
           {navButton('search', 'Tìm kiếm đề')}
+          {navButton('profile', 'Tài khoản', UserRound)}
           {navButton('knowledge', 'Quản trị', Database)}
         </nav>
         <button onClick={() => setMobileMenuOpen((open) => !open)} aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'} aria-expanded={mobileMenuOpen} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
@@ -51,7 +52,7 @@ export default function Navbar({ activeSubject, onSelectSubject, currentView, on
       </div>
 
       {mobileMenuOpen && <div className="border-t border-slate-100 bg-white px-4 py-3 lg:hidden">
-        <div className="flex flex-wrap gap-2">{navButton('home', 'Luyện tập')}{navButton('search', 'Tìm kiếm đề')}{navButton('knowledge', 'Quản trị', Database)}</div>
+        <div className="flex flex-wrap gap-2">{navButton('home', 'Luyện tập')}{navButton('search', 'Tìm kiếm đề')}{navButton('profile', 'Tài khoản', UserRound)}{navButton('knowledge', 'Quản trị', Database)}</div>
       </div>}
     </header>
   );

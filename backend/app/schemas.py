@@ -153,3 +153,53 @@ class DocumentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserProfileResponse(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    school: str
+    grade: Optional[int] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserProfileUpdate(BaseModel):
+    full_name: str = Field(min_length=1, max_length=100)
+    school: str = Field(default="", max_length=200)
+    grade: Optional[int] = Field(default=None, ge=1, le=12)
+
+
+class UserHistoryItem(BaseModel):
+    submission_id: str
+    exam_id: str
+    exam_title: str
+    subject_name: str
+    subject_code: str
+    score: float
+    total_correct: int
+    total_questions: int
+    completed_seconds: int
+    submitted_at: datetime
+
+
+class UserMistakeItem(BaseModel):
+    question_id: int
+    subject_name: str
+    exam_title: str
+    content: str
+    option_a: str
+    option_b: str
+    option_c: str
+    option_d: str
+    student_answer: Optional[str] = None
+    correct_answer: str
+    raw_explanation: Optional[str] = ""
+    difficulty: int
+    chapter: Optional[str] = ""
+    mistake_count: int
+    last_missed_at: datetime

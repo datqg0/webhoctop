@@ -27,3 +27,7 @@ services:
         sync: false
       - key: ADMIN_TOKEN_SECRET
         generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: ADMIN_GOOGLE_EMAIL
+        sync: false

@@ -12,7 +12,14 @@ const client = axios.create({
 });
 
 client.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('moon_admin_token');
+  const requestPath = config.url || '';
+  const isKnowledgeRequest = requestPath.startsWith('/knowledge');
+  const isUserRequest = requestPath.startsWith('/users/me') || /\/exams\/[^/]+\/submit$/.test(requestPath);
+  const token = isKnowledgeRequest
+    ? sessionStorage.getItem('moon_admin_token')
+    : isUserRequest
+      ? sessionStorage.getItem('moon_user_token')
+      : null;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -250,6 +257,38 @@ export const api = {
   loginAdmin: async (username, password) => {
     const res = await client.post('/auth/admin/login', { username, password });
     sessionStorage.setItem('moon_admin_token', res.data.access_token);
+    return res.data;
+  },
+
+  loginAdminWithGoogle: async (credential) => {
+    const res = await client.post('/auth/admin/google', { credential });
+    sessionStorage.setItem('moon_admin_token', res.data.access_token);
+    return res.data;
+  },
+
+  loginUserWithGoogle: async (credential) => {
+    const res = await client.post('/auth/google', { credential });
+    sessionStorage.setItem('moon_user_token', res.data.access_token);
+    return res.data;
+  },
+
+  getMyProfile: async () => {
+    const res = await client.get('/users/me');
+    return res.data;
+  },
+
+  updateMyProfile: async (profile) => {
+    const res = await client.patch('/users/me', profile);
+    return res.data;
+  },
+
+  getMyHistory: async () => {
+    const res = await client.get('/users/me/history?limit=100');
+    return res.data;
+  },
+
+  getMyMistakes: async () => {
+    const res = await client.get('/users/me/mistakes');
     return res.data;
   },
 
